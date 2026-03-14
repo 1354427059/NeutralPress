@@ -32,7 +32,7 @@ export interface PasswordResetTemplateProps {
 export function PasswordResetTemplate({
   username,
   resetUrl,
-  siteName = "NeutralPress",
+  siteName = "kilig",
   siteUrl = "https://example.com",
   logoUrl,
   primaryColor = "#2dd4bf",

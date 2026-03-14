@@ -60,7 +60,7 @@ export const defaultPages: DefaultPage[] = [
           description: "",
           content: {
             header: { value: "Welcome. I'm...", align: "left" },
-            title: { value: "NeutralPress | 中性色", align: "left" },
+            title: { value: "kilig | 中性色", align: "left" },
             content: {
               top: {
                 value: [
@@ -195,7 +195,7 @@ export const defaultPages: DefaultPage[] = [
     status: "ACTIVE",
     isSystemPage: true,
     metaDescription:
-      "NeutralPress 是专为博客和内容创作者设计的现代化CMS系统，提供完整的内容管理、发布和分析功能",
+      "kilig 是专为博客和内容创作者设计的现代化CMS系统，提供完整的内容管理、发布和分析功能",
     metaKeywords: "",
     robotsIndex: true,
   },
@@ -998,7 +998,7 @@ export const defaultPages: DefaultPage[] = [
           block: "timeline-item",
           content: {
             year: "2026",
-            title: "开始用 NeutralPress 吧",
+            title: "开始用 kilig 吧",
             layout: {
               incomplete: false,
               swapPosition: true,
@@ -1090,7 +1090,7 @@ export const defaultPages: DefaultPage[] = [
     status: "ACTIVE",
     isSystemPage: true,
     metaDescription:
-      "了解 NeutralPress 团队的故事、使命和愿景，以及我们如何为内容创作者提供更好的工具",
+      "了解 kilig 团队的故事、使命和愿景，以及我们如何为内容创作者提供更好的工具",
     metaKeywords: "",
     robotsIndex: true,
   },

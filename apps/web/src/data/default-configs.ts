@@ -21,7 +21,7 @@ export const CONFIG_DEFINITIONS = {
   // 站点基础配置
   // =====================================
   "site.title": {
-    default: "NeutralPress",
+    default: "kilig",
     description:
       "站点标题。显示为：{页面标题} | {站点标题}（格式可在seo.title.template中自定义）",
   },
@@ -57,11 +57,11 @@ export const CONFIG_DEFINITIONS = {
       "[可选] 自定义脚本标签。可填写一个或多个 <script> 标签（支持 src 外链和内联脚本），将注入到页面底部用于加载自定义脚本",
   },
   "site.slogan.primary": {
-    default: "A neutral place to thoughts.",
+    default: "A kilig place for thoughts.",
     description: "站点主标语。显示在主页",
   },
   "site.slogan.secondary": {
-    default: "Welcome to NeutralPress",
+    default: "Welcome to kilig",
     description: "站点副标语。显示在菜单的最上方",
   },
   "site.birthday": {
@@ -71,7 +71,7 @@ export const CONFIG_DEFINITIONS = {
   "site.copyright": {
     default: [
       "All rights reserved.",
-      "Powered by <a href='https://github.com/RavelloH/NeutralPress'>NeutralPress</a>.",
+      "Powered by <a href='https://github.com/1354427059/NeutralPress'>kilig</a>.",
     ] as string[],
     description:
       "站点版权信息。显示在菜单底部（桌面版）或页脚（移动版）。每行一条，可使用HTML",
@@ -120,7 +120,7 @@ export const CONFIG_DEFINITIONS = {
     description: "[可选] 站点默认SEO描述",
   },
   "seo.keywords": {
-    default: ["CMS", "Blog", "NeutralPress"] as string[],
+    default: ["CMS", "Blog", "kilig"] as string[],
     description: "[可选] 站点SEO关键词",
   },
   "seo.category": {
@@ -447,7 +447,7 @@ export const CONFIG_DEFINITIONS = {
     description: "[可选] 邮件通知发信地址。留空以关闭邮件通知功能",
   },
   "notice.email.from.name": {
-    default: "NeutralPress",
+    default: "kilig",
     description: "邮件发件人显示名称",
   },
   "notice.email.replyTo": {

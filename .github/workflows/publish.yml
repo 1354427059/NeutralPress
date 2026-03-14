@@ -5,10 +5,6 @@ on:
     branches:
       - main
 
-env:
-  DOCKERHUB_USERNAME: ravelloh
-  GHCR_IMAGE_NAME: ravelloh/neutralpress
-
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -19,6 +15,7 @@ jobs:
       is_stable_release: ${{ steps.check.outputs.is_stable_release }}
       version: ${{ steps.check.outputs.version }}
       semver: ${{ steps.check.outputs.semver }}
+      ghcr_image_ref: ${{ steps.registry.outputs.ghcr_image_ref }}
       build_sha: ${{ steps.finalize.outputs.build_sha }}
     steps:
       - name: Checkout repository
@@ -103,6 +100,14 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Resolve GHCR image reference
+        id: registry
+        env:
+          REPOSITORY_SLUG: ${{ github.repository }}
+        run: |
+          repo_slug="$(printf '%s' "$REPOSITORY_SLUG" | tr '[:upper:]' '[:lower:]')"
+          echo "ghcr_image_ref=ghcr.io/${repo_slug}" >> "$GITHUB_OUTPUT"
+
       # 3. 正式版发布时，同步所有 package.json 的 version，并提交回 main
       - name: Sync package versions and push
         if: steps.check.outputs.is_stable_release == 'true'
@@ -169,12 +174,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -189,9 +188,7 @@ jobs:
           context: .
           file: Dockerfile
           platforms: ${{ matrix.platform }}
-          tags: |
-            ${{ env.DOCKERHUB_USERNAME }}/neutralpress
-            ghcr.io/${{ env.GHCR_IMAGE_NAME }}
+          tags: ${{ needs.prepare.outputs.ghcr_image_ref }}
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
@@ -231,12 +228,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -253,33 +244,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          dockerhub_tags="-t ${{ env.DOCKERHUB_USERNAME }}/neutralpress:edge"
-          ghcr_tags="-t ghcr.io/${{ env.GHCR_IMAGE_NAME }}:edge"
+          ghcr_tags="-t ${{ needs.prepare.outputs.ghcr_image_ref }}:edge"
 
           if [ "$IS_STABLE_RELEASE" = "true" ]; then
-            dockerhub_tags="$dockerhub_tags -t ${{ env.DOCKERHUB_USERNAME }}/neutralpress:latest"
-            ghcr_tags="$ghcr_tags -t ghcr.io/${{ env.GHCR_IMAGE_NAME }}:latest"
+            ghcr_tags="$ghcr_tags -t ${{ needs.prepare.outputs.ghcr_image_ref }}:latest"
           fi
 
           if [ "$HAS_RELEASE" = "true" ] && [ -n "$SEMVER" ]; then
-            dockerhub_tags="$dockerhub_tags -t ${{ env.DOCKERHUB_USERNAME }}/neutralpress:${SEMVER}"
-            ghcr_tags="$ghcr_tags -t ghcr.io/${{ env.GHCR_IMAGE_NAME }}:${SEMVER}"
+            ghcr_tags="$ghcr_tags -t ${{ needs.prepare.outputs.ghcr_image_ref }}:${SEMVER}"
           fi
 
-          echo "dockerhub_args=$dockerhub_tags" >> "$GITHUB_OUTPUT"
           echo "ghcr_args=$ghcr_tags" >> "$GITHUB_OUTPUT"
-
-      - name: Create and push Docker Hub manifest list
-        run: |
-          set -euo pipefail
-
-          sources=""
-          for file in /tmp/digests/*.txt; do
-            digest="$(cat "$file")"
-            sources="$sources ${{ env.DOCKERHUB_USERNAME }}/neutralpress@${digest}"
-          done
-
-          docker buildx imagetools create ${{ steps.tags.outputs.dockerhub_args }} $sources
 
       - name: Create and push GHCR manifest list
         run: |
@@ -288,7 +263,7 @@ jobs:
           sources=""
           for file in /tmp/digests/*.txt; do
             digest="$(cat "$file")"
-            sources="$sources ghcr.io/${{ env.GHCR_IMAGE_NAME }}@${digest}"
+            sources="$sources ${{ needs.prepare.outputs.ghcr_image_ref }}@${digest}"
           done
 
           docker buildx imagetools create ${{ steps.tags.outputs.ghcr_args }} $sources

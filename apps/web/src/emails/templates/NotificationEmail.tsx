@@ -46,7 +46,7 @@ export function NotificationEmail({
   title,
   content,
   link,
-  siteName = "NeutralPress",
+  siteName = "kilig",
   siteUrl = "https://example.com",
   logoUrl,
   primaryColor = "#2dd4bf",

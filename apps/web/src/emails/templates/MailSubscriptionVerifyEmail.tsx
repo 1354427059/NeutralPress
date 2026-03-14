@@ -20,7 +20,7 @@ export interface MailSubscriptionVerifyEmailProps {
 export function MailSubscriptionVerifyEmail({
   email,
   confirmUrl,
-  siteName = "NeutralPress",
+  siteName = "kilig",
   siteUrl = "https://example.com",
   logoUrl,
   primaryColor = "#2dd4bf",

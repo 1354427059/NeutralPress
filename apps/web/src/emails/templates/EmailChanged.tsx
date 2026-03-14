@@ -38,7 +38,7 @@ export function EmailChangedTemplate({
   verificationCode,
   oldEmail,
   newEmail,
-  siteName = "NeutralPress",
+  siteName = "kilig",
   siteUrl = "https://example.com",
   logoUrl,
   primaryColor = "#2dd4bf",

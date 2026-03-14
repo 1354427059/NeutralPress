@@ -19,7 +19,7 @@ export interface EmailLayoutProps {
   preview: string;
   /** 邮件主要内容 */
   children: React.ReactNode;
-  /** 站点名称（默认：NeutralPress） */
+  /** 站点名称（默认：kilig） */
   siteName?: string;
   /** 站点URL（用于logo链接） */
   siteUrl?: string;
@@ -38,7 +38,7 @@ export interface EmailLayoutProps {
 export function EmailLayout({
   preview,
   children,
-  siteName = "NeutralPress",
+  siteName = "kilig",
   siteUrl = "https://example.com",
   logoUrl,
   primaryColor: _primaryColor = "#2dd4bf",

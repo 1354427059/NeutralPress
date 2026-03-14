@@ -15,6 +15,77 @@ import { defaultConfigs } from "../src/data/default-configs";
 import { defaultMenus } from "../src/data/default-menus";
 import { defaultPages } from "../src/data/default-pages";
 
+const BRANDING_CONFIG_PATCHES = [
+  {
+    key: "site.title",
+    oldDefault: "NeutralPress",
+    newDefault: "kilig",
+  },
+  {
+    key: "site.slogan.primary",
+    oldDefault: "A neutral place to thoughts.",
+    newDefault: "A kilig place for thoughts.",
+  },
+  {
+    key: "site.slogan.secondary",
+    oldDefault: "Welcome to NeutralPress",
+    newDefault: "Welcome to kilig",
+  },
+  {
+    key: "site.copyright",
+    oldDefault: [
+      "All rights reserved.",
+      "Powered by <a href='https://github.com/RavelloH/NeutralPress'>NeutralPress</a>.",
+    ],
+    newDefault: [
+      "All rights reserved.",
+      "Powered by <a href='https://github.com/1354427059/NeutralPress'>kilig</a>.",
+    ],
+  },
+  {
+    key: "seo.keywords",
+    oldDefault: ["CMS", "Blog", "NeutralPress"],
+    newDefault: ["CMS", "Blog", "kilig"],
+  },
+  {
+    key: "notice.email.from.name",
+    oldDefault: "NeutralPress",
+    newDefault: "kilig",
+  },
+] as const;
+
+const BRANDING_PAGE_PATCHES = {
+  "system-home": {
+    metaDescription: {
+      old:
+        "NeutralPress 是专为博客和内容创作者设计的现代化CMS系统，提供完整的内容管理、发布和分析功能",
+      next: "kilig 是专为博客和内容创作者设计的现代化CMS系统，提供完整的内容管理、发布和分析功能",
+    },
+    blockTextUpdates: [
+      {
+        blockId: 1,
+        path: ["content", "title", "value"],
+        old: "NeutralPress | 中性色",
+        next: "kilig | 中性色",
+      },
+    ],
+  },
+  "system-about-page": {
+    metaDescription: {
+      old: "了解 NeutralPress 团队的故事、使命和愿景，以及我们如何为内容创作者提供更好的工具",
+      next: "了解 kilig 团队的故事、使命和愿景，以及我们如何为内容创作者提供更好的工具",
+    },
+    blockTextUpdates: [
+      {
+        blockId: 14,
+        path: ["content", "title"],
+        old: "开始用 NeutralPress 吧",
+        next: "开始用 kilig 吧",
+      },
+    ],
+  },
+} as const;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function seedDefaults(options?: { prisma?: any }) {
   const externalPrisma = options?.prisma;
@@ -53,6 +124,7 @@ export async function seedDefaults(options?: { prisma?: any }) {
 
     // 种子化默认配置
     await seedDefaultConfigs(prisma);
+    await patchOfficialBrandingConfigs(prisma);
 
     // 种子化系统文件夹
     await seedSystemFolders(prisma);
@@ -62,6 +134,7 @@ export async function seedDefaults(options?: { prisma?: any }) {
 
     // 种子化默认页面和菜单
     await seedDefaultPagesAndMenus(prisma);
+    await patchOfficialBrandingPages(prisma);
 
     rlog.success("✓ Database default values check completed");
     if (shouldManagePrismaLifecycle) {
@@ -221,6 +294,96 @@ async function seedDefaultConfigs(prisma: any) {
   );
 }
 
+function cloneJsonValue<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getNestedValue(
+  source: Record<string, unknown>,
+  path: readonly string[],
+): unknown {
+  let current: unknown = source;
+  for (const key of path) {
+    if (!isJsonObject(current) || !(key in current)) {
+      return undefined;
+    }
+    current = current[key];
+  }
+  return current;
+}
+
+function setNestedValue(
+  source: Record<string, unknown>,
+  path: readonly string[],
+  value: unknown,
+): boolean {
+  let current: Record<string, unknown> = source;
+  for (let index = 0; index < path.length - 1; index += 1) {
+    const key = path[index];
+    const next = current[key];
+    if (!isJsonObject(next)) {
+      return false;
+    }
+    current = next;
+  }
+
+  const lastKey = path[path.length - 1];
+  if (!lastKey || !(lastKey in current)) {
+    return false;
+  }
+
+  current[lastKey] = value;
+  return true;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function patchOfficialBrandingConfigs(prisma: any) {
+  rlog.log("> Checking official branding config patches...");
+
+  let patchedCount = 0;
+
+  const existingConfigs = await prisma.config.findMany({
+    where: {
+      key: {
+        in: BRANDING_CONFIG_PATCHES.map((patch) => patch.key),
+      },
+    },
+    select: {
+      key: true,
+      value: true,
+    },
+  });
+
+  for (const config of existingConfigs) {
+    const patch = BRANDING_CONFIG_PATCHES.find((item) => item.key === config.key);
+    if (!patch) continue;
+    if (!isJsonObject(config.value) || !("default" in config.value)) continue;
+
+    if (JSON.stringify(config.value.default) !== JSON.stringify(patch.oldDefault)) {
+      continue;
+    }
+
+    await prisma.config.update({
+      where: { key: config.key },
+      data: {
+        value: {
+          ...cloneJsonValue(config.value),
+          default: cloneJsonValue(patch.newDefault),
+        },
+      },
+    });
+
+    patchedCount += 1;
+    rlog.info(`  | Patched branding config: ${config.key}`);
+  }
+
+  rlog.success(`✓ Branding config patch completed: updated ${patchedCount} items`);
+}
+
 // 种子化默认页面和菜单
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function seedDefaultPagesAndMenus(prisma: any) {
@@ -362,6 +525,74 @@ async function seedDefaultPagesAndMenus(prisma: any) {
   rlog.success(
     `✓ Pages and menus check completed: added ${pagesAddedCount} pages, ${menusAddedCount} menus, skipped ${pagesSkippedCount} pages, ${menusSkippedCount} menus`,
   );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function patchOfficialBrandingPages(prisma: any) {
+  rlog.log("> Checking official branding page patches...");
+
+  let patchedCount = 0;
+  const pageIds = Object.keys(BRANDING_PAGE_PATCHES);
+  const pages = await prisma.page.findMany({
+    where: {
+      id: {
+        in: pageIds,
+      },
+    },
+    select: {
+      id: true,
+      config: true,
+      metaDescription: true,
+    },
+  });
+
+  for (const page of pages) {
+    const patch = BRANDING_PAGE_PATCHES[page.id as keyof typeof BRANDING_PAGE_PATCHES];
+    if (!patch) continue;
+
+    let changed = false;
+    const data: Record<string, unknown> = {};
+    const nextConfig = cloneJsonValue(page.config);
+
+    if (page.metaDescription === patch.metaDescription.old) {
+      data.metaDescription = patch.metaDescription.next;
+      changed = true;
+    }
+
+    if (isJsonObject(nextConfig) && Array.isArray(nextConfig.blocks)) {
+      for (const blockPatch of patch.blockTextUpdates) {
+        const targetBlock = nextConfig.blocks.find(
+          (block): block is Record<string, unknown> =>
+            isJsonObject(block) && block.id === blockPatch.blockId,
+        );
+
+        if (!targetBlock) continue;
+
+        const currentValue = getNestedValue(targetBlock, blockPatch.path);
+        if (currentValue !== blockPatch.old) continue;
+
+        if (setNestedValue(targetBlock, blockPatch.path, blockPatch.next)) {
+          changed = true;
+        }
+      }
+    }
+
+    if (!changed) continue;
+
+    if (nextConfig !== undefined) {
+      data.config = nextConfig;
+    }
+
+    await prisma.page.update({
+      where: { id: page.id },
+      data,
+    });
+
+    patchedCount += 1;
+    rlog.info(`  | Patched branding page: ${page.id}`);
+  }
+
+  rlog.success(`✓ Branding page patch completed: updated ${patchedCount} pages`);
 }
 
 // 种子化系统文件夹

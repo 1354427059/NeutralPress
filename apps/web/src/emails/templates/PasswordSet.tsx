@@ -31,7 +31,7 @@ export interface PasswordSetTemplateProps {
 export function PasswordSetTemplate({
   username,
   setAt,
-  siteName = "NeutralPress",
+  siteName = "kilig",
   siteUrl = "https://example.com",
   logoUrl,
   primaryColor = "#2dd4bf",

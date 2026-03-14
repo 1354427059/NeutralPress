@@ -207,7 +207,7 @@ export default function HeaderWrapper({
   const [isLoaded, setIsLoaded] = useState(false);
   const pathname = usePathname();
   const previousPathname = useRef<string>("");
-  const [displayTitle, setDisplayTitle] = useState("NeutralPress");
+  const [displayTitle, setDisplayTitle] = useState("kilig");
   const [showTitle, setShowTitle] = useState(true);
   const [showLoading, setShowLoading] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<
@@ -251,8 +251,8 @@ export default function HeaderWrapper({
 
     const documentTitle = document.title || "";
     const cleanTitle = documentTitle.includes(" | ")
-      ? documentTitle.split(" | ")[0] || "NeutralPress"
-      : documentTitle || "NeutralPress";
+      ? documentTitle.split(" | ")[0] || "kilig"
+      : documentTitle || "kilig";
 
     setDisplayTitle((previousTitle) =>
       previousTitle === cleanTitle ? previousTitle : cleanTitle,

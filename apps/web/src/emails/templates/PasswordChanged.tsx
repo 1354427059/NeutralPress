@@ -28,7 +28,7 @@ export interface PasswordChangedTemplateProps {
  */
 export function PasswordChangedTemplate({
   username,
-  siteName = "NeutralPress",
+  siteName = "kilig",
   siteUrl = "https://example.com",
   logoUrl,
   primaryColor = "#2dd4bf",

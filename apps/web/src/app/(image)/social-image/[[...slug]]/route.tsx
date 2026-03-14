@@ -16,8 +16,8 @@ import { generateGradient } from "@/lib/shared/gradient";
 import { normalizeSiteColorConfig } from "@/lib/shared/site-color";
 
 const CARD_SIZE = { width: 1200, height: 630 };
-const FALLBACK_TITLE = "NeutralPress";
-const FALLBACK_DESCRIPTION = "A neutral place to thoughts.";
+const FALLBACK_TITLE = "kilig";
+const FALLBACK_DESCRIPTION = "A kilig place for thoughts.";
 const FALLBACK_PATHNAME = "/";
 const MAX_SEGMENTS = 8;
 const MAX_SEGMENT_LENGTH = 96;

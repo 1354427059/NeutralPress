@@ -8,7 +8,7 @@ import prisma from "@/lib/server/prisma";
 
 // 基础静态配置（不依赖数据库的固定值）
 const STATIC_METADATA = {
-  generator: "NeutralPress",
+  generator: "kilig",
   referrer: "strict-origin-when-cross-origin" as const,
   classification: "CMS",
   formatDetection: {
@@ -492,7 +492,7 @@ function buildSocialImageAlt(
     (part): part is string => !!part && part.trim() !== "",
   );
 
-  return parts.join(" - ") || "NeutralPress";
+  return parts.join(" - ") || "kilig";
 }
 
 type PaginationLinkValue = string | URL | null;
@@ -680,7 +680,7 @@ const getJsonLdSiteContext = unstable_cache(
       /\/+$/,
       "",
     );
-    const siteTitle = getStringValue(titleConfig, "NeutralPress");
+    const siteTitle = getStringValue(titleConfig, "kilig");
     const siteDescription = getStringValue(descriptionConfig, "");
     const authorName = getStringValue(authorConfig, "");
     const avatarPath = getStringValue(avatarConfig).trim() || "/icon/512x";
@@ -1434,7 +1434,7 @@ export async function generateMetadata(
   // 生成标题元数据
   const titleMetadata = generateTitleMetadata(
     titleTemplate,
-    title || "NeutralPress",
+    title || "kilig",
     subtitle,
   );
 
@@ -1476,13 +1476,13 @@ export async function generateMetadata(
       if (titleTemplate) {
         processedOverrides.title = parseTitleTemplate(
           titleTemplate,
-          title || "NeutralPress",
+          title || "kilig",
           subtitle,
           processedOverrides.title,
         );
       } else {
         // 没有模板时使用简单拼接
-        const siteTitle = title || "NeutralPress";
+        const siteTitle = title || "kilig";
         const fullTitle = subtitle ? `${siteTitle} - ${subtitle}` : siteTitle;
         processedOverrides.title = `${processedOverrides.title} | ${fullTitle}`;
       }

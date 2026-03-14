@@ -142,7 +142,7 @@ export async function getFeedData(): Promise<FeedData> {
 
   const siteConfig: SiteConfig = {
     url: getValue(urlConfig, "https://neutralpress.com"),
-    title: getValue(titleConfig, "NeutralPress"),
+    title: getValue(titleConfig, "kilig"),
     description: getValue(descConfig, ""),
     author: getValue(authorConfig, "Admin"),
   };

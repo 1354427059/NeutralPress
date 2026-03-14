@@ -31,12 +31,12 @@ export default function AdminRedirect() {
           {isMobile ? (
             <>
               <h1 className="text-6xl">
-                NeutralPress <br /> Admin Panel
+                kilig <br /> Admin Panel
               </h1>{" "}
               <br />
             </>
           ) : (
-            <h1 className="text-6xl">NeutralPress Admin Panel</h1>
+            <h1 className="text-6xl">kilig Admin Panel</h1>
           )}
         </div>
         <div className="text-2xl">

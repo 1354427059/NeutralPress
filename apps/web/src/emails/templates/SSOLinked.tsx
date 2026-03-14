@@ -34,7 +34,7 @@ export function SSOLinkedTemplate({
   username,
   provider,
   linkedAt,
-  siteName = "NeutralPress",
+  siteName = "kilig",
   siteUrl = "https://example.com",
   logoUrl,
   primaryColor = "#2dd4bf",

@@ -9,8 +9,8 @@ import { normalizeSiteColorConfig } from "@/lib/shared/site-color";
 
 const ICON_SIZES = [16, 32, 48, 72, 96, 128, 144, 192, 256, 384, 512] as const;
 
-const FALLBACK_TITLE = "NeutralPress";
-const FALLBACK_DESCRIPTION = "NeutralPress";
+const FALLBACK_TITLE = "kilig";
+const FALLBACK_DESCRIPTION = "kilig";
 const FALLBACK_THEME_COLOR = "#ffffff";
 const FALLBACK_BACKGROUND_COLOR = "#ffffff";
 

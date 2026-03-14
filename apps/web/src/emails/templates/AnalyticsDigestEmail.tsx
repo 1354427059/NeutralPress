@@ -89,7 +89,7 @@ export function AnalyticsDigestEmail({
   flushSummaryLines,
   topPaths,
   topReferers,
-  siteName = "NeutralPress",
+  siteName = "kilig",
   siteUrl = "https://example.com",
   logoUrl,
   primaryColor = "#2dd4bf",
