@@ -1,6 +1,10 @@
 // scripts/seed-defaults.ts
 // 数据库默认值种子脚本
 
+import { constants as fsConstants } from "node:fs";
+import fs from "node:fs/promises";
+import path from "node:path";
+
 import RLog from "rlog-js";
 
 import { loadPrismaClientConstructor } from "@/../scripts/load-prisma-client";
@@ -54,6 +58,68 @@ const BRANDING_CONFIG_PATCHES = [
   },
 ] as const;
 
+const BRANDING_MENU_PATCHES = [
+  {
+    id: "menu-github",
+    action: "update",
+    oldMenu: {
+      name: "GitHub",
+      icon: "github-fill",
+      link: "https://github.com/RavelloH/NeutralPress",
+      slug: null,
+      status: "ACTIVE",
+      order: 1,
+      category: "OUTSITE",
+      pageId: null,
+    },
+    data: {
+      link: "https://github.com/1354427059/NeutralPress",
+    },
+  },
+  {
+    id: "menu-documentation",
+    action: "delete",
+    oldMenu: {
+      name: "使用文档",
+      icon: "book-2-fill",
+      link: "https://neutralpress.net",
+      slug: null,
+      status: "ACTIVE",
+      order: 2,
+      category: "OUTSITE",
+      pageId: null,
+    },
+  },
+  {
+    id: "menu-demo",
+    action: "delete",
+    oldMenu: {
+      name: "Demo",
+      icon: "computer-fill",
+      link: "https://ravelloh.com",
+      slug: null,
+      status: "ACTIVE",
+      order: 3,
+      category: "OUTSITE",
+      pageId: null,
+    },
+  },
+  {
+    id: "menu-rerport",
+    action: "delete",
+    oldMenu: {
+      name: "报告问题",
+      icon: "bug-2-fill",
+      link: "https://github.com/RavelloH/NeutralPress/issues",
+      slug: null,
+      status: "ACTIVE",
+      order: 4,
+      category: "OUTSITE",
+      pageId: null,
+    },
+  },
+] as const;
+
 const BRANDING_PAGE_PATCHES = {
   "system-home": {
     metaDescription: {
@@ -85,6 +151,13 @@ const BRANDING_PAGE_PATCHES = {
     ],
   },
 } as const;
+
+const DEFAULT_LOCAL_STORAGE_NAME = "local-app-server";
+const DEFAULT_LOCAL_STORAGE_DISPLAY_NAME = "应用服务器本地存储";
+const DEFAULT_LOCAL_STORAGE_ROOT = "/var/www/uploads";
+const DEFAULT_LOCAL_STORAGE_BASE_URL = "/";
+const DEFAULT_LOCAL_STORAGE_MAX_FILE_SIZE = 52_428_800;
+const DEFAULT_LOCAL_STORAGE_PATH_TEMPLATE = "/{year}/{month}/{filename}";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function seedDefaults(options?: { prisma?: any }) {
@@ -129,11 +202,15 @@ export async function seedDefaults(options?: { prisma?: any }) {
     // 种子化系统文件夹
     await seedSystemFolders(prisma);
 
+    // 为自部署场景补齐一个可用的默认本地存储
+    await seedDefaultLocalStorage(prisma);
+
     // 生成 VAPID 密钥（如果需要）
     await generateVapidKeysIfNeeded(prisma);
 
     // 种子化默认页面和菜单
     await seedDefaultPagesAndMenus(prisma);
+    await patchOfficialBrandingMenus(prisma);
     await patchOfficialBrandingPages(prisma);
 
     rlog.success("✓ Database default values check completed");
@@ -156,6 +233,114 @@ export async function seedDefaults(options?: { prisma?: any }) {
     rlog.error("Database default value seeding failed:", error);
     throw error;
   }
+}
+
+// 为应用服务器/Docker 自部署场景补一个默认本地存储
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function seedDefaultLocalStorage(prisma: any) {
+  rlog.log("> Checking default local storage...");
+
+  const providers = await prisma.storageProvider.findMany({
+    where: {
+      name: {
+        not: "external-url",
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      isActive: true,
+      isDefault: true,
+    },
+  });
+
+  const hasActiveDefaultStorage = providers.some(
+    (provider: { isActive: boolean; isDefault: boolean }) =>
+      provider.isActive && provider.isDefault,
+  );
+  if (hasActiveDefaultStorage) {
+    rlog.info("  | Active default storage already exists");
+    return;
+  }
+
+  const hasAnyActiveStorage = providers.some(
+    (provider: { isActive: boolean }) => provider.isActive,
+  );
+  if (hasAnyActiveStorage) {
+    rlog.info(
+      "  | Active storage providers already exist, skipping local storage bootstrap",
+    );
+    return;
+  }
+
+  const storageRoot = path.resolve(DEFAULT_LOCAL_STORAGE_ROOT);
+  try {
+    await fs.mkdir(storageRoot, { recursive: true });
+    await fs.access(storageRoot, fsConstants.W_OK);
+  } catch (error) {
+    rlog.warning(
+      `  Local storage root is not writable, skipping bootstrap: ${storageRoot}`,
+    );
+    rlog.warning("  Error details:", error);
+    return;
+  }
+
+  const existingBootstrapStorage = providers.find(
+    (provider: { name: string }) => provider.name === DEFAULT_LOCAL_STORAGE_NAME,
+  );
+
+  if (existingBootstrapStorage) {
+    await prisma.storageProvider.update({
+      where: { id: existingBootstrapStorage.id },
+      data: {
+        type: "LOCAL",
+        displayName: DEFAULT_LOCAL_STORAGE_DISPLAY_NAME,
+        baseUrl: DEFAULT_LOCAL_STORAGE_BASE_URL,
+        isActive: true,
+        isDefault: true,
+        maxFileSize: DEFAULT_LOCAL_STORAGE_MAX_FILE_SIZE,
+        pathTemplate: DEFAULT_LOCAL_STORAGE_PATH_TEMPLATE,
+        config: {
+          rootDir: storageRoot,
+          createDirIfNotExists: "true",
+          fileMode: "0644",
+          dirMode: "0755",
+        },
+      },
+    });
+    rlog.info(
+      `  | Repaired bootstrap storage: ${DEFAULT_LOCAL_STORAGE_NAME} -> ${storageRoot}`,
+    );
+    return;
+  }
+
+  await prisma.storageProvider.updateMany({
+    where: { isDefault: true },
+    data: { isDefault: false },
+  });
+
+  await prisma.storageProvider.create({
+    data: {
+      name: DEFAULT_LOCAL_STORAGE_NAME,
+      type: "LOCAL",
+      displayName: DEFAULT_LOCAL_STORAGE_DISPLAY_NAME,
+      baseUrl: DEFAULT_LOCAL_STORAGE_BASE_URL,
+      isActive: true,
+      isDefault: true,
+      maxFileSize: DEFAULT_LOCAL_STORAGE_MAX_FILE_SIZE,
+      pathTemplate: DEFAULT_LOCAL_STORAGE_PATH_TEMPLATE,
+      config: {
+        rootDir: storageRoot,
+        createDirIfNotExists: "true",
+        fileMode: "0644",
+        dirMode: "0755",
+      },
+    },
+  });
+  rlog.info(
+    `  | Added bootstrap local storage: ${DEFAULT_LOCAL_STORAGE_NAME} -> ${storageRoot}`,
+  );
 }
 
 // 生成 VAPID 密钥（如果需要）
@@ -340,6 +525,31 @@ function setNestedValue(
   return true;
 }
 
+function matchesBrandingMenuPatch(
+  menu: {
+    name: string;
+    icon: string | null;
+    link: string | null;
+    slug: string | null;
+    status: string;
+    order: number;
+    category: string;
+    pageId: string | null;
+  },
+  expected: (typeof BRANDING_MENU_PATCHES)[number]["oldMenu"],
+) {
+  return (
+    menu.name === expected.name &&
+    menu.icon === expected.icon &&
+    menu.link === expected.link &&
+    menu.slug === expected.slug &&
+    menu.status === expected.status &&
+    menu.order === expected.order &&
+    menu.category === expected.category &&
+    menu.pageId === expected.pageId
+  );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function patchOfficialBrandingConfigs(prisma: any) {
   rlog.log("> Checking official branding config patches...");
@@ -382,6 +592,59 @@ async function patchOfficialBrandingConfigs(prisma: any) {
   }
 
   rlog.success(`✓ Branding config patch completed: updated ${patchedCount} items`);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function patchOfficialBrandingMenus(prisma: any) {
+  rlog.log("> Checking official branding menu patches...");
+
+  let updatedCount = 0;
+  let deletedCount = 0;
+
+  const existingMenus = await prisma.menu.findMany({
+    where: {
+      id: {
+        in: BRANDING_MENU_PATCHES.map((patch) => patch.id),
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      icon: true,
+      link: true,
+      slug: true,
+      status: true,
+      order: true,
+      category: true,
+      pageId: true,
+    },
+  });
+
+  for (const menu of existingMenus) {
+    const patch = BRANDING_MENU_PATCHES.find((item) => item.id === menu.id);
+    if (!patch) continue;
+    if (!matchesBrandingMenuPatch(menu, patch.oldMenu)) continue;
+
+    if (patch.action === "update") {
+      await prisma.menu.update({
+        where: { id: menu.id },
+        data: patch.data,
+      });
+      updatedCount += 1;
+      rlog.info(`  | Patched branding menu: ${menu.id}`);
+      continue;
+    }
+
+    await prisma.menu.delete({
+      where: { id: menu.id },
+    });
+    deletedCount += 1;
+    rlog.info(`  | Removed branding menu: ${menu.id}`);
+  }
+
+  rlog.success(
+    `✓ Branding menu patch completed: updated ${updatedCount} items, removed ${deletedCount} items`,
+  );
 }
 
 // 种子化默认页面和菜单
